@@ -10,9 +10,9 @@
 #include <getopt.h>
 #include <ctype.h>
 
-#include <libsnap.h>
-#include <snap_tools.h>
-#include <snap_s_regs.h>
+#include <libosnap.h>
+#include <osnap_tools.h>
+#include <osnap_global_regs.h>
 
 #include "snap_stringwrite.h"
 #include <omp.h>
@@ -66,7 +66,7 @@ int initialize_snap(struct snap_card **device, struct snap_action **action, FILE
   snap_card_ioctl(*device, GET_SDRAM_SIZE, (unsigned long) &ioctl_data);
   LOG(" Card, %d MB of Card Ram avilable.\n", (int) ioctl_data);
 
-  snap_mmio_read64(*device, SNAP_S_CIR, &cir);
+  snap_global_read64(*device, SNAP_S_CIR, &cir);
   LOG("Read from MMIO. Attaching action.\n");
 
   // Attach action
@@ -150,30 +150,30 @@ int main(int argc, char *argv[]) {
   LOG("Values buffer @ %016lX\n", val.full);
 
   LOG("Setting control registers...\n");
-  snap_mmio_write32(device, REG_CONTROL, CONTROL_RESET);
-  snap_mmio_write32(device, REG_CONTROL, 0);
-  snap_mmio_write32(device, REG_OFF_ADDR_LO, off.half.lo);
-  snap_mmio_write32(device, REG_OFF_ADDR_HI, off.half.hi);
-  snap_mmio_write32(device, REG_UTF8_ADDR_LO, val.half.lo);
-  snap_mmio_write32(device, REG_UTF8_ADDR_HI, val.half.hi);
-  snap_mmio_write32(device, REG_FIRST_IDX, 0);
-  snap_mmio_write32(device, REG_LAST_IDX, num_strings);
-  snap_mmio_write32(device, REG_STRLEN_MIN, strlen_min);
-  snap_mmio_write32(device, REG_PRNG_MASK, strlen_mask);
+  snap_action_write32(device, REG_CONTROL, CONTROL_RESET);
+  snap_action_write32(device, REG_CONTROL, 0);
+  snap_action_write32(device, REG_OFF_ADDR_LO, off.half.lo);
+  snap_action_write32(device, REG_OFF_ADDR_HI, off.half.hi);
+  snap_action_write32(device, REG_UTF8_ADDR_LO, val.half.lo);
+  snap_action_write32(device, REG_UTF8_ADDR_HI, val.half.hi);
+  snap_action_write32(device, REG_FIRST_IDX, 0);
+  snap_action_write32(device, REG_LAST_IDX, num_strings);
+  snap_action_write32(device, REG_STRLEN_MIN, strlen_min);
+  snap_action_write32(device, REG_PRNG_MASK, strlen_mask);
 
   LOG("Registers set, starting kernel and polling for completion...\n");
 
   double start = omp_get_wtime();
 
   // Starting occurs when control start bit was high, then goes low.
-  snap_mmio_write32(device, REG_CONTROL, CONTROL_START);
-  snap_mmio_write32(device, REG_CONTROL, CONTROL_STOP);
+  snap_action_write32(device, REG_CONTROL, CONTROL_START);
+  snap_action_write32(device, REG_CONTROL, CONTROL_STOP);
 
   // Poll for completion.
   uint32_t status = 0;
   uint32_t last_off = 0xDEADBEEF;
   do {
-    snap_mmio_read32(device, REG_STATUS, &status);
+    snap_action_read32(device, REG_STATUS, &status);
     LOG("S: %08X\n", status);
     sleep(1);
   } while ((status & STATUS_DONE) != STATUS_DONE);
