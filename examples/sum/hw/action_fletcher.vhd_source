@@ -304,7 +304,7 @@ begin
   -- AXI Lite Slave inputs
   ----------------------------------------------------------------------
   fletcher_space_r                <= axi_ctrl_reg_araddr(9);
-  fletcher_space_w                <= axi_ctrl_reg_araddr(9);
+  fletcher_space_w                <= axi_ctrl_reg_awaddr(9);
 
   -- Fletcher inputs
   fletcher_s_axi_awaddr(31 downto 9) <= (others => '0');
